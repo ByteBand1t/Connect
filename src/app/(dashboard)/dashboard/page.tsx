@@ -1,6 +1,10 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getDashboardStats, getRecentAssets } from "@/lib/actions/dashboard";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -10,36 +14,98 @@ export default async function DashboardPage() {
   }
 
   const user = session.user;
-  // In a real scenario, we would fetch the organization name using the organizationId from the session
-  // For now, we'll use a placeholder or the user's name if org name is not in session
   const orgName = (user as any).organizationName || "My Organization";
 
-  const modules = [
-    { title: "Assets", description: "Manage your hardware and software assets", color: "bg-blue-100 text-blue-700" },
-    { title: "Bestellungen", description: "Track and manage supply chain orders", color: "bg-green-100 text-green-700" },
-    { title: "Dokumente", description: "Central repository for technical docs", color: "bg-purple-100 text-purple-700" },
-    { title: "Dashboard", description: "Overview of your system status", color: "bg-orange-100 text-orange-700" },
-  ];
+  const stats = await getDashboardStats();
+  const recentAssets = await getRecentAssets();
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-8">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Willkommen, {user.name}!</h1>
         <p className="text-muted-foreground">Organisation: {orgName}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {modules.map((module) => (
-          <Card key={module.title} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="text-lg">{module.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{module.description}</p>
-              <div className={`mt-4 h-2 w-full rounded-full ${module.color.split(' ')[0]}`} />
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Gesunde Assets</CardTitle>
+            <div className="h-2 w-2 rounded-full bg-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.green}</div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-yellow-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Wartung fällig</CardTitle>
+            <div className="h-2 w-2 rounded-full bg-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.yellow}</div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-red-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Kritisch/Überfällig</CardTitle>
+            <div className="h-2 w-2 rounded-full bg-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.red}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Zuletzt hinzugefügt</h2>
+          <nextLink.Link 
+            href="/assets" 
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Alle Assets ansehen &rarr;
+          </nextLink.Link>
+        </div>
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Typ</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Datum</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentAssets.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                    Keine Assets gefunden.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                recentAssets.map((asset) => (
+                  <TableRow key={asset.id}>
+                    <TableCell className="font-medium">{asset.name}</TableCell>
+                    <TableCell>{asset.type}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="gap-1">
+                        <div className={`h-2 w-2 rounded-full ${
+                          asset.status === "GREEN" ? "bg-green-500" : 
+                          asset.status === "YELLOW" ? "bg-yellow-500" : "bg-red-500"
+                        }`} />
+                        {asset.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground text-sm">
+                      {new Date(asset.createdAt).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
       </div>
     </div>
   );
