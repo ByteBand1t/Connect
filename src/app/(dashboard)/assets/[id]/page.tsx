@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import Link from "next/link";
 import { Edit, Trash2, Calendar, Info, Tag, MapPin, Package } from "lucide-react";
+import { DocumentHub } from "@/components/document-hub";
 
 export default async function AssetDetailPage({ params }: { params: { id: string } }) {
   const session = await auth();
@@ -108,6 +109,9 @@ export default async function AssetDetailPage({ params }: { params: { id: string
             </div>
           </CardContent>
         </Card>
+      </div>
+      <div className="mt-8">
+        <DocumentHub assetId={asset.id} />
       </div>
     </div>
   );
