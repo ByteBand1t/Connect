@@ -1,7 +1,4 @@
-"use client";
-
 import { Asset, AssetStatus } from "@prisma/client";
-import { addDays, isAfter, isBefore, parseISO } from "date-fns";
 
 export function calculateAssetStatus(asset: Asset): AssetStatus {
   if (!asset.nextMaintenanceDate) {
@@ -10,13 +7,13 @@ export function calculateAssetStatus(asset: Asset): AssetStatus {
 
   const nextDate = new Date(asset.nextMaintenanceDate);
   const now = new Date();
-  const thirtyDaysFromNow = addDays(now, 30);
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-  if (isBefore(nextDate, now)) {
+  if (nextDate < now) {
     return AssetStatus.RED;
   }
 
-  if (isBefore(nextDate, thirtyDaysFromNow)) {
+  if (nextDate < thirtyDaysFromNow) {
     return AssetStatus.YELLOW;
   }
 

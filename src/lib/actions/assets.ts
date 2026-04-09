@@ -22,13 +22,19 @@ const AssetSchema = z.object({
 });
 
 export async function getAssets() {
-  const session = await auth();
-  if (!session?.user?.organizationId) throw new Error("Unauthorized");
+  try {
+    const session = await auth();
+    if (!session?.user?.organizationId) throw new Error("Unauthorized");
 
-  return await db.asset.findMany({
-    where: { organizationId: session.user.organizationId },
-    orderBy: { createdAt: "desc" },
-  });
+    const assets = await db.asset.findMany({
+      where: { organizationId: session.user.organizationId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { success: true, data: assets };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fetch assets" };
+  }
 }
 
 export async function getAsset(id: string) {

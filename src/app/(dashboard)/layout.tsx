@@ -17,9 +17,9 @@ export default async function DashboardLayout({
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Assets", href: "/dashboard/assets", icon: Package },
-    { name: "Bestellungen", href: "/dashboard/orders", icon: ShoppingCart },
-    { name: "Dokumente", href: "/dashboard/documents", icon: FileText },
+    { name: "Assets", href: "/assets", icon: Package },
+    { name: "Bestellungen", href: "/orders", icon: ShoppingCart },
+    { name: "Dokumente", href: "/documents", icon: FileText },
   ];
 
   return (

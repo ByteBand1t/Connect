@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getDashboardStats, getRecentAssets } from "@/lib/actions/dashboard";
+import { getDashboardStats } from "@/lib/actions/dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
@@ -16,8 +16,7 @@ export default async function DashboardPage() {
   const user = session.user;
   const orgName = (user as any).organizationName || "My Organization";
 
-  const stats = await getDashboardStats();
-  const recentAssets = await getRecentAssets();
+  const { stats, recentAssets } = await getDashboardStats();
 
   return (
     <div className="p-6 space-y-8">
@@ -59,12 +58,12 @@ export default async function DashboardPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Zuletzt hinzugefügt</h2>
-          <nextLink.Link 
+          <Link 
             href="/assets" 
             className="text-sm text-blue-600 hover:underline"
           >
             Alle Assets ansehen &rarr;
-          </nextLink.Link>
+          </Link>
         </div>
         <Card>
           <Table>
