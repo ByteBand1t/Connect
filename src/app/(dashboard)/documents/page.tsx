@@ -1,5 +1,5 @@
 import { getDocumentsByOrganization } from "@/lib/actions/documents";
-import { DocumentsTable } from "@/components/documents/documents-table";
+import DocumentsTable from "@/components/documents/documents-table";
 
 export default async function DocumentsPage() {
   const documents = await getDocumentsByOrganization();

@@ -89,10 +89,8 @@ export function DocumentUploadDialog({ assetId }: { assetId: string }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <FileUp className="w-4 h-4" /> Dokument hochladen
-        </Button>
+      <DialogTrigger render={<Button className="flex items-center gap-2" />}>
+        <FileUp className="w-4 h-4" /> Dokument hochladen
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -116,7 +114,7 @@ export function DocumentUploadDialog({ assetId }: { assetId: string }) {
             <Label htmlFor="category">Kategorie</Label>
             <Select
               value={formData.category}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value ?? "" }))}
               required
             >
               <SelectTrigger id="category">

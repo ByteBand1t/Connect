@@ -19,7 +19,7 @@ import { de } from "date-fns/locale";
 interface Document {
   id: string;
   name: string;
-  size: number;
+  fileSize: number;
   category: string;
   createdAt: Date;
   assetId: string;
@@ -61,7 +61,7 @@ export default function DocumentsTable({ documents }: DocumentsTableProps) {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
         />
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v ?? "all")}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Kategorie" />
           </SelectTrigger>
@@ -102,7 +102,7 @@ export default function DocumentsTable({ documents }: DocumentsTableProps) {
                   <TableCell>
                     <Badge variant="secondary">{doc.category || "Keine"}</Badge>
                   </TableCell>
-                  <TableCell>{formatSize(doc.size)}</TableCell>
+                  <TableCell>{formatSize(doc.fileSize)}</TableCell>
                   <TableCell>
                     {format(new Date(doc.createdAt), "dd.MM.yyyy HH:mm", { locale: de })}
                   </TableCell>

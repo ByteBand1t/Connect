@@ -69,7 +69,7 @@ export function DocumentHub({ assetId, documents }: DocumentHubProps) {
           <h2 className="text-xl font-bold">Dokumenten-Hub</h2>
           <p className="text-sm text-muted-foreground">Verwalten Sie alle Dokumente für dieses Asset</p>
         </div>
-        <DocumentUploadDialog assetId={assetId} onSuccess={() => router.refresh()} />
+        <DocumentUploadDialog assetId={assetId} />
       </div>
 
       <div className="rounded-md border bg-white">
@@ -110,10 +110,12 @@ export function DocumentHub({ assetId, documents }: DocumentHubProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" asChild>
-                        <a href={`/api/documents/download?id=${doc.id}`} target="_blank" rel="noopener noreferrer">
-                          <Download className="w-4 h-4" />
-                        </a>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        render={<a href={`/api/documents/download?id=${doc.id}`} target="_blank" rel="noopener noreferrer" />}
+                      >
+                        <Download className="w-4 h-4" />
                       </Button>
                       <Button 
                         variant="ghost" 

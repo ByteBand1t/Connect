@@ -20,7 +20,7 @@ export default function AssetsPage() {
   useEffect(() => {
     async function fetchAssets() {
       const res = await getAssets();
-      if (res.success) setAssets(res.data);
+      if (res.success && res.data) setAssets(res.data);
       setLoading(false);
     }
     fetchAssets();
@@ -49,10 +49,8 @@ export default function AssetsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Assets</h1>
-        <Button asChild>
-          <Link href="/assets/new" className="flex items-center gap-2">
-            <Plus className="w-4 h-4" /> New Asset
-          </Link>
+        <Button render={<Link href="/assets/new" />}>
+          <Plus className="w-4 h-4" /> New Asset
         </Button>
       </div>
 
@@ -66,7 +64,7 @@ export default function AssetsPage() {
             onChange={(e) => setSearch(e.target.value)} 
           />
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
+        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? "ALL")}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by Type" />
           </SelectTrigger>
@@ -80,7 +78,7 @@ export default function AssetsPage() {
             <SelectItem value="OTHER">Other</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "ALL")}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>
@@ -126,8 +124,8 @@ export default function AssetsPage() {
                   <TableCell>{asset.manufacturer}</TableCell>
                   <TableCell>{asset.serialNumber || "-"}</TableCell>
                   <TableCell className="text-right">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/assets/${asset.id}`}>View</Link>
+                    <Button render={<Link href={`/assets/${asset.id}`} />} variant="ghost" size="sm">
+                      View
                     </Button>
                   </TableCell>
                 </TableRow>
