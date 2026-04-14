@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getAssets } from "@/lib/actions/assets";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,28 @@ type AssetRow = {
 };
 
 export default function AssetsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [assets, setAssets] = useState<AssetRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState(() => {
+    const statusFromUrl = searchParams.get("status");
+    return statusFromUrl === "GREEN" || statusFromUrl === "YELLOW" || statusFromUrl === "RED"
+      ? statusFromUrl
+      : "ALL";
+  });
+
+  useEffect(() => {
+    const statusFromUrl = searchParams.get("status");
+    const nextStatus =
+      statusFromUrl === "GREEN" || statusFromUrl === "YELLOW" || statusFromUrl === "RED"
+        ? statusFromUrl
+        : "ALL";
+    setStatusFilter(nextStatus);
+  }, [searchParams]);
 
   useEffect(() => {
     async function fetchAssets() {
@@ -87,7 +105,22 @@ export default function AssetsPage() {
             <SelectItem value="OTHER">Other</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "ALL")}>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => {
+            const selected = v ?? "ALL";
+            setStatusFilter(selected);
+
+            const params = new URLSearchParams(searchParams.toString());
+            if (selected === "ALL") {
+              params.delete("status");
+            } else {
+              params.set("status", selected);
+            }
+            const query = params.toString();
+            router.replace(query ? `${pathname}?${query}` : pathname);
+          }}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>

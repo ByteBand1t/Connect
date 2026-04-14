@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { logActivity } from "@/lib/actions/activity";
 
 const AssetSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -62,12 +63,20 @@ export async function createAsset(data: unknown) {
   if (!validated.success) return { success: false, error: "Invalid input" };
 
   try {
-    await db.asset.create({
+    const asset = await db.asset.create({
       data: {
         ...validated.data,
         organizationId: session.user.organizationId,
       },
     });
+    try {
+      await logActivity("ASSET_CREATED", "Asset", asset.id, `Asset "${asset.name}" was created.`, {
+        status: asset.status,
+        type: asset.type,
+      });
+    } catch (error) {
+      console.error("Activity log failed:", error);
+    }
     revalidatePath("/assets");
     return { success: true };
   } catch {
@@ -79,15 +88,35 @@ export async function updateAsset(id: string, data: unknown) {
   const session = await auth();
   if (!session?.user?.organizationId) throw new Error("Unauthorized");
 
-  await getAsset(id); // Re-uses Org check
+  const previousAsset = await getAsset(id); // Re-uses Org check
   const validated = AssetSchema.partial().safeParse(data);
   if (!validated.success) return { success: false, error: "Invalid input" };
 
   try {
-    await db.asset.update({
+    const asset = await db.asset.update({
       where: { id },
       data: validated.data,
     });
+    try {
+      await logActivity("ASSET_UPDATED", "Asset", asset.id, `Asset "${asset.name}" was updated.`, {
+        previousStatus: previousAsset.status,
+        currentStatus: asset.status,
+      });
+      if (previousAsset.status !== asset.status) {
+        await logActivity(
+          "ASSET_STATUS_CHANGED",
+          "Asset",
+          asset.id,
+          `Asset "${asset.name}" status changed from ${previousAsset.status} to ${asset.status}.`,
+          {
+            previousStatus: previousAsset.status,
+            currentStatus: asset.status,
+          }
+        );
+      }
+    } catch (error) {
+      console.error("Activity log failed:", error);
+    }
     revalidatePath("/assets");
     revalidatePath(`/assets/${id}`);
     return { success: true };
@@ -100,12 +129,20 @@ export async function deleteAsset(id: string) {
   const session = await auth();
   if (!session?.user?.organizationId) throw new Error("Unauthorized");
 
-  await getAsset(id); // Re-uses Org check
+  const asset = await getAsset(id); // Re-uses Org check
 
   try {
     await db.asset.delete({
       where: { id },
     });
+    try {
+      await logActivity("ASSET_DELETED", "Asset", id, `Asset "${asset.name}" was deleted.`, {
+        status: asset.status,
+        type: asset.type,
+      });
+    } catch (error) {
+      console.error("Activity log failed:", error);
+    }
     revalidatePath("/assets");
     return { success: true };
   } catch {

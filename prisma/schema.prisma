@@ -22,6 +22,7 @@ model Organization {
   documents       Document[]
   orders          Order[]
   supplierConfigs SupplierConfig[]
+  activityLogs    ActivityLog[]
 }
 
 model User {
@@ -36,6 +37,7 @@ model User {
   updatedAt      DateTime     @updatedAt
   documents      Document[]
   orders         Order[]
+  activityLogs   ActivityLog[]
 }
 
 enum UserRole {
@@ -177,4 +179,20 @@ model OrderSubmission {
   errorMessage     String?
   submittedAt      DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+}
+
+model ActivityLog {
+  id              String       @id @default(cuid())
+  type            String
+  entityType      String
+  entityId        String
+  description     String
+  metadata        Json?
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  createdAt       DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
 }

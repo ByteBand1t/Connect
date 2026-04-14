@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { logActivity } from "@/lib/actions/activity";
 
 const OrderItemSchema = z.object({
   partNumber: z.string().min(1, "Part number is required"),
@@ -131,6 +132,15 @@ export async function createOrder(data: OrderInput) {
       },
     });
 
+    try {
+      await logActivity("ORDER_CREATED", "Order", order.id, `Order ${order.orderNumber} was created.`, {
+        assetId: order.assetId,
+        status: order.status,
+      });
+    } catch (error) {
+      console.error("Activity log failed:", error);
+    }
+
     revalidatePath("/orders");
     return { success: true, data: order };
   } catch (error: unknown) {
@@ -166,6 +176,21 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
       data: { status },
     });
 
+    try {
+      await logActivity(
+        status === "DELIVERED" ? "ORDER_DELIVERED" : "ORDER_STATUS_CHANGED",
+        "Order",
+        id,
+        `Order ${order.orderNumber} status changed from ${order.status} to ${status}.`,
+        {
+          previousStatus: order.status,
+          currentStatus: status,
+        }
+      );
+    } catch (error) {
+      console.error("Activity log failed:", error);
+    }
+
     revalidatePath("/orders");
     revalidatePath(`/orders/${id}`);
     return { success: true };
@@ -197,6 +222,14 @@ export async function deleteOrder(id: string) {
     }
 
     await db.order.delete({ where: { id } });
+
+    try {
+      await logActivity("ORDER_DELETED", "Order", id, `Order ${order.orderNumber} was deleted.`, {
+        status: order.status,
+      });
+    } catch (error) {
+      console.error("Activity log failed:", error);
+    }
 
     revalidatePath("/orders");
     return { success: true };
