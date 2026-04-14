@@ -1,7 +1,8 @@
+"use server";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { unlink } from "node:fs/promises";
 
 export async function getDocumentsByAsset(assetId: string) {
   const session = await auth();
@@ -33,6 +34,7 @@ export async function deleteDocument(documentId: string) {
   }
 
   try {
+    const { unlink } = await import("node:fs/promises");
     await unlink(document.filePath);
   } catch (error) {
     console.error("Fehler beim Löschen der Datei vom Filesystem:", error);

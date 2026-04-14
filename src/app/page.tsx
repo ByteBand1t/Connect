@@ -14,11 +14,11 @@ export default function Home() {
           </p>
         </div>
         <div className="flex gap-4">
-          <Button asChild variant="default" size="lg">
-            <Link href="/login">Login</Link>
+          <Button render={<Link href="/login" />} variant="default" size="lg">
+            Login
           </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/register">Register</Link>
+          <Button render={<Link href="/register" />} variant="outline" size="lg">
+            Register
           </Button>
         </div>
       </main>

@@ -1,25 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { unlink } from "node:fs/promises";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import { readFile, unlink } from "node:fs/promises";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   try {
-    const document = await db.document.findUnique({
-      where: { id },
-    });
+    const document = await db.document.findUnique({ where: { id } });
 
     if (!document) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
@@ -45,19 +41,17 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   try {
-    const document = await db.document.findUnique({
-      where: { id },
-    });
+    const document = await db.document.findUnique({ where: { id } });
 
     if (!document) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
@@ -69,14 +63,11 @@ export async function DELETE(
 
     try {
       await unlink(document.filePath);
-    } catch (error) {
-      console.error("Error deleting file from filesystem:", error);
+    } catch {
       // Continue to delete from DB even if file is missing
     }
 
-    await db.document.delete({
-      where: { id },
-    });
+    await db.document.delete({ where: { id } });
 
     return NextResponse.json({ message: "Document deleted successfully" });
   } catch (error) {

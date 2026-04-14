@@ -23,7 +23,7 @@ const assetSchema = z.object({
   status: z.enum(["GREEN", "YELLOW", "RED"]),
   purchaseDate: z.string().optional(),
   warrantyUntil: z.string().optional(),
-  maintenanceIntervalDays: z.coerce.number().int().positive().optional(),
+  maintenanceIntervalDays: z.number().int().positive().optional(),
   notes: z.string().optional(),
 });
 
@@ -56,8 +56,8 @@ export default function NewAssetPage() {
     <div className="container mx-auto py-10 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Create New Asset</h1>
-        <Button variant="outline" asChild>
-          <Link href="/assets">Back to List</Link>
+        <Button variant="outline" render={<Link href="/assets" />}>
+          Back to List
         </Button>
       </div>
 
@@ -243,8 +243,8 @@ export default function NewAssetPage() {
               />
 
               <div className="flex justify-end gap-4">
-                <Button variant="outline" asChild>
-                  <Link href="/assets">Cancel</Link>
+                <Button variant="outline" render={<Link href="/assets" />}>
+                  Cancel
                 </Button>
                 <Button type="submit">Create Asset</Button>
               </div>
