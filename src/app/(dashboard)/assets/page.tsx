@@ -10,8 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 
+type AssetRow = {
+  id: string;
+  name: string;
+  type: string;
+  manufacturer: string;
+  serialNumber: string | null;
+  status: string;
+};
+
 export default function AssetsPage() {
-  const [assets, setAssets] = useState<any[]>([]);
+  const [assets, setAssets] = useState<AssetRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");

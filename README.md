@@ -3,10 +3,10 @@
 ConnectAsset is a comprehensive B2B SaaS platform designed for efficient Asset and Supply-Chain Management.
 
 ## Tech Stack
-- **Framework**: Next.js 14 (App Router, TypeScript)
+- **Framework**: Next.js 16 (App Router, TypeScript)
 - **Styling**: Tailwind CSS + shadcn/ui
 - **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: Auth.js (NextAuth v5) with Credentials provider
+- **Authentication**: Auth.js (NextAuth v5 beta) with Credentials provider (JWT session strategy)
 - **Infrastructure**: Docker Compose
 
 ## Key Features
@@ -26,7 +26,7 @@ ConnectAsset is a comprehensive B2B SaaS platform designed for efficient Asset a
 1. Clone the repository:
    ```bash
    git clone https://github.com/ByteBand1t/Connect.git
-   cd connect_repo
+   cd Connect
    ```
 2. Install dependencies:
    ```bash
@@ -36,6 +36,7 @@ ConnectAsset is a comprehensive B2B SaaS platform designed for efficient Asset a
    ```env
    DATABASE_URL="postgresql://user:password@localhost:5432/connectasset"
    AUTH_SECRET="your-auth-secret"
+   NEXT_PUBLIC_APP_URL="http://localhost:3000"
    ```
 4. Run database migrations:
    ```bash
@@ -48,3 +49,10 @@ ConnectAsset is a comprehensive B2B SaaS platform designed for efficient Asset a
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Docker
+
+You can run the app and database with Docker Compose:
+
+```bash
+docker compose up --build
+```

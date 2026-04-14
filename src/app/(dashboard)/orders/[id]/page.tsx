@@ -63,7 +63,14 @@ export default async function OrderDetailPage({
   }
 
   const order = orderResult.data;
-  const activeConfigs = (configsResult.data ?? []).filter((c) => c.isActive);
+  const activeConfigs = (
+    (configsResult.data ?? []) as Array<{
+      id: string;
+      name: string;
+      adapterId: string;
+      isActive: boolean;
+    }>
+  ).filter((c) => c.isActive);
   const submissions = (submissionsResult.data ?? []) as {
     id: string;
     supplierConfig: { id: string; name: string; adapterId: string };
@@ -178,7 +185,7 @@ export default async function OrderDetailPage({
                   </TableCell>
                 </TableRow>
               ) : (
-                order.items.map((item) => (
+                order.items.map((item: { id: string; partNumber: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-mono text-xs">
                       {item.partNumber}

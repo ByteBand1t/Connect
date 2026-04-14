@@ -133,7 +133,7 @@ export default async function DashboardPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                recentAssets.map((asset) => (
+                recentAssets.map((asset: { id: string; name: string; type: string; status: string; createdAt: Date }) => (
                   <TableRow key={asset.id}>
                     <TableCell className="font-medium">
                       {asset.name}

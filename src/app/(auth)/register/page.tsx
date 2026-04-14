@@ -32,7 +32,7 @@ export default function RegisterPage() {
       } else {
         toast.error(result.error || "Something went wrong");
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);

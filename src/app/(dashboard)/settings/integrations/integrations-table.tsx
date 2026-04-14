@@ -90,8 +90,7 @@ export function IntegrationsTable({ configs }: IntegrationsTableProps) {
   if (configs.length === 0) {
     return (
       <div className="rounded-md border p-8 text-center text-muted-foreground">
-        Keine Integrationen konfiguriert. Klicke auf „Neue Integration
-        hinzufügen".
+        Keine Integrationen konfiguriert. Klicke auf „Neue Integration hinzufügen“.
       </div>
     );
   }
@@ -167,7 +166,7 @@ export function IntegrationsTable({ configs }: IntegrationsTableProps) {
                           Integration löschen?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                          „{cfg.name}" wird unwiderruflich gelöscht. Diese
+                          &bdquo;{cfg.name}&ldquo; wird unwiderruflich gelöscht. Diese
                           Aktion kann nicht rückgängig gemacht werden.
                         </AlertDialogDescription>
                       </AlertDialogHeader>

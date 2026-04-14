@@ -20,7 +20,6 @@ const AssetSchema = z.object({
   nextMaintenanceDate: z.coerce.date().optional(),
   notes: z.string().optional(),
 });
-
 export async function getAssets() {
   try {
     const session = await auth();
@@ -32,8 +31,11 @@ export async function getAssets() {
     });
 
     return { success: true, data: assets };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to fetch assets" };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch assets",
+    };
   }
 }
 
@@ -52,7 +54,7 @@ export async function getAsset(id: string) {
   return asset;
 }
 
-export async function createAsset(data: any) {
+export async function createAsset(data: unknown) {
   const session = await auth();
   if (!session?.user?.organizationId) throw new Error("Unauthorized");
 
@@ -68,16 +70,16 @@ export async function createAsset(data: any) {
     });
     revalidatePath("/assets");
     return { success: true };
-  } catch (e) {
+  } catch {
     return { success: false, error: "Could not create asset" };
   }
 }
 
-export async function updateAsset(id: string, data: any) {
+export async function updateAsset(id: string, data: unknown) {
   const session = await auth();
   if (!session?.user?.organizationId) throw new Error("Unauthorized");
 
-  const asset = await getAsset(id); // Re-uses Org check
+  await getAsset(id); // Re-uses Org check
   const validated = AssetSchema.partial().safeParse(data);
   if (!validated.success) return { success: false, error: "Invalid input" };
 
@@ -89,7 +91,7 @@ export async function updateAsset(id: string, data: any) {
     revalidatePath("/assets");
     revalidatePath(`/assets/${id}`);
     return { success: true };
-  } catch (e) {
+  } catch {
     return { success: false, error: "Could not update asset" };
   }
 }
@@ -98,7 +100,7 @@ export async function deleteAsset(id: string) {
   const session = await auth();
   if (!session?.user?.organizationId) throw new Error("Unauthorized");
 
-  const asset = await getAsset(id); // Re-uses Org check
+  await getAsset(id); // Re-uses Org check
 
   try {
     await db.asset.delete({
@@ -106,7 +108,7 @@ export async function deleteAsset(id: string) {
     });
     revalidatePath("/assets");
     return { success: true };
-  } catch (e) {
+  } catch {
     return { success: false, error: "Could not delete asset" };
   }
 }

@@ -80,8 +80,8 @@ export function DocumentUploadDialog({ assetId }: { assetId: string }) {
       setIsOpen(false);
       setFormData({ name: "", category: "", file: null });
       router.refresh();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Upload fehlgeschlagen");
     } finally {
       setLoading(false);
     }

@@ -1,12 +1,9 @@
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  adapter: PrismaAdapter(db) as any,
   session: {
     strategy: "jwt",
   },
@@ -46,16 +43,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.organizationId = (user as any).organizationId;
+        token.role = user.role;
+        token.organizationId = user.organizationId;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).organizationId = token.organizationId;
+        session.user.id = String(token.id ?? "");
+        session.user.role = String(token.role ?? "");
+        session.user.organizationId = String(token.organizationId ?? "");
       }
       return session;
     },

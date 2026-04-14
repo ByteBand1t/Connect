@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "lucide-react"; // Note: Using a custom Link or next/link
 import NextLink from "next/link";
 
 export default function LoginPage() {
@@ -54,7 +53,7 @@ export default function LoginPage() {
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <NextLink href="/register" className="text-primary underline underline-offset-4">
             Register
           </NextLink>
