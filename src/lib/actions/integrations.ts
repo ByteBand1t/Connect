@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { adapterRegistry } from "@/lib/integrations/registry";
+import { logActivity } from "@/lib/actions/activity";
 
 // ---------------------------------------------------------------------------
 // Zod schemas
@@ -284,6 +285,35 @@ export async function submitOrderToSupplier(
         where: { id: orderId },
         data: { status: "SUBMITTED" },
       });
+    }
+
+    try {
+      if (result.success) {
+        await logActivity(
+          "ORDER_SUBMITTED",
+          "OrderSubmission",
+          submission.id,
+          `Order ${order.orderNumber} was submitted to supplier "${supplierConfig.name}".`,
+          {
+            orderId: order.id,
+            supplierConfigId: supplierConfig.id,
+          }
+        );
+      } else {
+        await logActivity(
+          "ORDER_SUBMISSION_FAILED",
+          "OrderSubmission",
+          submission.id,
+          `Order ${order.orderNumber} submission to supplier "${supplierConfig.name}" failed.`,
+          {
+            orderId: order.id,
+            supplierConfigId: supplierConfig.id,
+            error: result.errors?.join(", ") ?? "Unknown error",
+          }
+        );
+      }
+    } catch (error) {
+      console.error("Activity log failed:", error);
     }
 
     revalidatePath(`/orders/${orderId}`);
