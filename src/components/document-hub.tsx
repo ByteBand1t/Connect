@@ -24,16 +24,23 @@ import {
 import { 
   FileText, 
   Download, 
-  Trash2, 
-  ExternalLink 
+  Trash2
 } from "lucide-react";
 import { deleteDocument } from "@/lib/actions/documents";
 import { useRouter } from "next/navigation";
 import { DocumentUploadDialog } from "./document-upload-dialog";
 
+type DocumentRow = {
+  id: string;
+  name: string;
+  fileSize: number;
+  category: string;
+  createdAt: Date | string;
+};
+
 interface DocumentHubProps {
   assetId: string;
-  documents: any[];
+  documents: DocumentRow[];
 }
 
 export function DocumentHub({ assetId, documents }: DocumentHubProps) {
@@ -41,7 +48,7 @@ export function DocumentHub({ assetId, documents }: DocumentHubProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<{ id: string, name: string } | null>(null);
   const router = useRouter();
 
-  async function handleDelete(id: string, name: string) {
+  async function handleDelete(id: string) {
     setDeletingId(id);
     const res = await deleteDocument(id);
     if (res.success) {
@@ -113,7 +120,7 @@ export function DocumentHub({ assetId, documents }: DocumentHubProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        render={<a href={`/api/documents/download?id=${doc.id}`} target="_blank" rel="noopener noreferrer" />}
+                        render={<a href={`/api/documents/${doc.id}`} target="_blank" rel="noopener noreferrer" />}
                       >
                         <Download className="w-4 h-4" />
                       </Button>
@@ -146,8 +153,8 @@ export function DocumentHub({ assetId, documents }: DocumentHubProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => isDeleteDialogOpen && handleDelete(isDeleteDialogOpen.id, isDeleteDialogOpen.name)}
+              <AlertDialogAction 
+              onClick={() => isDeleteDialogOpen && handleDelete(isDeleteDialogOpen.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deletingId === isDeleteDialogOpen?.id ? "Lösche..." : "Löschen"}

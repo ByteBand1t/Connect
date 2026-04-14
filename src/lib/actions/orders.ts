@@ -18,6 +18,7 @@ const OrderSchema = z.object({
   currency: z.string().default("EUR"),
   items: z.array(OrderItemSchema).min(1, "At least one item is required"),
 });
+type OrderInput = z.infer<typeof OrderSchema>;
 
 export type OrderStatus = "DRAFT" | "SUBMITTED" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
@@ -45,8 +46,11 @@ export async function getOrders() {
     }));
 
     return { success: true, data: ordersWithNames };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to fetch orders" };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch orders",
+    };
   }
 }
 
@@ -72,12 +76,15 @@ export async function getOrder(id: string) {
     }
 
     return { success: true, data: order };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to fetch order" };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch order",
+    };
   }
 }
 
-export async function createOrder(data: unknown) {
+export async function createOrder(data: OrderInput) {
   try {
     const session = await auth();
     if (!session?.user?.organizationId || !session.user.id) {
@@ -91,7 +98,7 @@ export async function createOrder(data: unknown) {
 
     const { items, ...orderData } = validated.data;
 
-    const totalAmount = items.reduce((sum, item) => {
+    const totalAmount = items.reduce((sum, item: z.infer<typeof OrderItemSchema>) => {
       return sum + item.quantity * (item.unitPrice || 0);
     }, 0);
 
@@ -111,7 +118,7 @@ export async function createOrder(data: unknown) {
         createdById: session.user.id,
         organizationId: session.user.organizationId,
         items: {
-          create: items.map((item) => ({
+          create: items.map((item: z.infer<typeof OrderItemSchema>) => ({
             ...item,
             totalPrice: item.quantity * (item.unitPrice || 0),
           })),
@@ -126,8 +133,11 @@ export async function createOrder(data: unknown) {
 
     revalidatePath("/orders");
     return { success: true, data: order };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to create order" };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create order",
+    };
   }
 }
 
@@ -159,8 +169,11 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
     revalidatePath("/orders");
     revalidatePath(`/orders/${id}`);
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to update order status" };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update order status",
+    };
   }
 }
 
@@ -187,7 +200,10 @@ export async function deleteOrder(id: string) {
 
     revalidatePath("/orders");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to delete order" };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete order",
+    };
   }
 }

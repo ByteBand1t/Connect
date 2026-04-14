@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { calculateAssetStatus } from "@/lib/asset-utils";
 
+type StatusAsset = Parameters<typeof calculateAssetStatus>[0];
+
 export async function getDashboardStats() {
   const session = await auth();
   if (!session?.user?.organizationId) {
@@ -17,9 +19,9 @@ export async function getDashboardStats() {
   });
 
   const stats = {
-    green: assets.filter((a) => calculateAssetStatus(a) === "GREEN").length,
-    yellow: assets.filter((a) => calculateAssetStatus(a) === "YELLOW").length,
-    red: assets.filter((a) => calculateAssetStatus(a) === "RED").length,
+    green: assets.filter((a: StatusAsset) => calculateAssetStatus(a) === "GREEN").length,
+    yellow: assets.filter((a: StatusAsset) => calculateAssetStatus(a) === "YELLOW").length,
+    red: assets.filter((a: StatusAsset) => calculateAssetStatus(a) === "RED").length,
     total: assets.length,
   };
 

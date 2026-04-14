@@ -9,8 +9,9 @@ const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
+type LoginInput = z.infer<typeof loginSchema>;
 
-export async function login(values: any) {
+export async function login(values: LoginInput) {
   const validatedFields = loginSchema.safeParse(values);
 
   if (!validatedFields.success) {

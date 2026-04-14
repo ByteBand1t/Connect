@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { randomUUID } from "node:crypto";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_MIME_TYPES = [
@@ -15,6 +14,16 @@ const ALLOWED_MIME_TYPES = [
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ];
+const DOCUMENT_CATEGORIES = [
+  "MANUAL",
+  "SCHEMATIC",
+  "MAINTENANCE_REPORT",
+  "WARRANTY",
+  "INVOICE",
+  "CERTIFICATE",
+  "OTHER",
+] as const;
+type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +48,10 @@ export async function POST(req: NextRequest) {
 
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json({ error: "Unsupported file type." }, { status: 400 });
+    }
+
+    if (!DOCUMENT_CATEGORIES.includes(category as DocumentCategory)) {
+      return NextResponse.json({ error: "Invalid category." }, { status: 400 });
     }
 
     // Validate Asset and Organization
@@ -76,7 +89,7 @@ export async function POST(req: NextRequest) {
         fileSize: file.size,
         mimeType: file.type,
         filePath: filePath,
-        category: category as any,
+        category: category as DocumentCategory,
         assetId,
         uploadedById: userId,
         organizationId,

@@ -1,8 +1,11 @@
-import { Asset, AssetStatus } from "@prisma/client";
+export type AssetStatus = "GREEN" | "YELLOW" | "RED";
+type AssetLike = {
+  nextMaintenanceDate: Date | string | null;
+};
 
-export function calculateAssetStatus(asset: Asset): AssetStatus {
+export function calculateAssetStatus(asset: AssetLike): AssetStatus {
   if (!asset.nextMaintenanceDate) {
-    return AssetStatus.GREEN;
+    return "GREEN";
   }
 
   const nextDate = new Date(asset.nextMaintenanceDate);
@@ -10,12 +13,12 @@ export function calculateAssetStatus(asset: Asset): AssetStatus {
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   if (nextDate < now) {
-    return AssetStatus.RED;
+    return "RED";
   }
 
   if (nextDate < thirtyDaysFromNow) {
-    return AssetStatus.YELLOW;
+    return "YELLOW";
   }
 
-  return AssetStatus.GREEN;
+  return "GREEN";
 }

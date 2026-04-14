@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { createAsset } from "@/lib/actions/assets";
 
@@ -30,6 +29,7 @@ const assetSchema = z.object({
 type AssetFormValues = z.infer<typeof assetSchema>;
 
 export default function NewAssetPage() {
+  const router = useRouter();
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
     defaultValues: {
@@ -46,7 +46,7 @@ export default function NewAssetPage() {
     const result = await createAsset(values);
     if (result.success) {
       toast.success("Asset created successfully");
-      window.location.href = "/assets";
+      router.push("/assets");
     } else {
       toast.error(result.error || "Something went wrong");
     }

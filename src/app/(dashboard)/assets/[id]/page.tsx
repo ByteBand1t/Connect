@@ -22,11 +22,12 @@ export default async function AssetDetailPage({ params }: { params: { id: string
   const documents = await getDocumentsByAsset(asset.id);
 
   const status = calculateAssetStatus(asset);
-  const statusColor = {
+  const statusColorMap: Record<"GREEN" | "YELLOW" | "RED", string> = {
     GREEN: "bg-green-500",
     YELLOW: "bg-yellow-500",
     RED: "bg-red-500",
-  }[status] || "bg-gray-500";
+  };
+  const statusColor = statusColorMap[status as keyof typeof statusColorMap];
 
   return (
     <div className="p-6 space-y-6">
