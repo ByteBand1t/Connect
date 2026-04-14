@@ -68,6 +68,8 @@ function formatDate(date: Date | null) {
   return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(date);
 }
 
+type AssetStatus = keyof typeof statusMeta;
+
 export default async function DashboardPage() {
   const session = await auth();
 
@@ -188,9 +190,10 @@ export default async function DashboardPage() {
               <p className="text-sm text-muted-foreground">All assets are in the green range.</p>
             ) : (
               <div className="space-y-3">
-                {data.upcomingMaintenance.map((asset) => {
+                {data.upcomingMaintenance.map((asset: (typeof data.upcomingMaintenance)[number]) => {
                   const dueDate = asset.nextMaintenanceDate;
-                  const isOverdue = dueDate ? dueDate.getTime() < Date.now() : false;
+                  const isOverdue = dueDate ? dueDate.getTime() < data.nowTimestamp : false;
+                  const status = asset.status as AssetStatus;
                   return (
                     <div key={asset.id} className={`rounded-md border p-3 ${isOverdue ? "border-red-200 bg-red-50/50" : ""}`}>
                       <div className="flex items-start justify-between gap-3">
@@ -200,8 +203,8 @@ export default async function DashboardPage() {
                           </Link>
                           <div className="mt-1 flex items-center gap-2">
                             <Badge variant="outline">{typeLabels[asset.type] ?? asset.type}</Badge>
-                            <Badge variant="outline" className={statusMeta[asset.status].badgeClassName}>
-                              {asset.status}
+                            <Badge variant="outline" className={statusMeta[status].badgeClassName}>
+                              {status}
                             </Badge>
                           </div>
                         </div>
@@ -249,7 +252,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {data.recentOrders.map((order) => (
+                {data.recentOrders.map((order: (typeof data.recentOrders)[number]) => (
                   <Link key={order.id} href={`/orders/${order.id}`} className="block rounded-md border p-3 hover:bg-muted/50">
                     <div className="flex items-center justify-between gap-2">
                       <div>
@@ -314,7 +317,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-muted-foreground">No activities yet.</p>
           ) : (
             <div className="space-y-3">
-              {data.recentActivities.map((activity) => (
+              {data.recentActivities.map((activity: (typeof data.recentActivities)[number]) => (
                 <div key={activity.id} className="flex items-start gap-3 rounded-md border p-3">
                   <div className="mt-0.5 rounded-full bg-muted p-1.5">
                     {activity.entityType === "Asset" ? <Package className="size-4" /> : activity.entityType === "Order" ? <ShoppingCart className="size-4" /> : <PlugZap className="size-4" />}
