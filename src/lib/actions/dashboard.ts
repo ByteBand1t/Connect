@@ -94,12 +94,14 @@ export async function getDashboardData() {
   ]);
 
   const assetCounts = ASSET_STATUSES.reduce<Record<(typeof ASSET_STATUSES)[number], number>>((acc, status) => {
-    acc[status] = assetStatusGroups.find((group) => group.status === status)?._count.status ?? 0;
+    acc[status] =
+      assetStatusGroups.find((group: { status: string; _count: { status: number } }) => group.status === status)?._count.status ?? 0;
     return acc;
   }, { GREEN: 0, YELLOW: 0, RED: 0 });
 
   const orderCounts = ORDER_STATUSES.reduce<Record<(typeof ORDER_STATUSES)[number], number>>((acc, status) => {
-    acc[status] = orderStatusGroups.find((group) => group.status === status)?._count.status ?? 0;
+    acc[status] =
+      orderStatusGroups.find((group: { status: string; _count: { status: number } }) => group.status === status)?._count.status ?? 0;
     return acc;
   }, { DRAFT: 0, SUBMITTED: 0, CONFIRMED: 0, SHIPPED: 0, DELIVERED: 0, CANCELLED: 0 });
 
@@ -113,5 +115,6 @@ export async function getDashboardData() {
     openSubmissions,
     failedSubmissions,
     recentActivities,
+    nowTimestamp: Date.now(),
   };
 }
