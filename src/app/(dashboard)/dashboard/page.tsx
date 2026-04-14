@@ -14,21 +14,27 @@ export default async function DashboardPage() {
   }
 
   const user = session.user;
-  const orgName = (user as any).organizationName || "My Organization";
+  const orgName = (user as { organizationName?: string }).organizationName ?? "My Organization";
 
-  const { stats, recentAssets } = await getDashboardStats();
+  const { stats, recentAssets, activeIntegrations, pendingSubmissions } =
+    await getDashboardStats();
 
   return (
     <div className="p-6 space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Willkommen, {user.name}!</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Willkommen, {user.name}!
+        </h1>
         <p className="text-muted-foreground">Organisation: {orgName}</p>
       </div>
 
+      {/* Asset stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gesunde Assets</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Gesunde Assets
+            </CardTitle>
             <div className="h-2 w-2 rounded-full bg-green-500" />
           </CardHeader>
           <CardContent>
@@ -37,7 +43,9 @@ export default async function DashboardPage() {
         </Card>
         <Card className="border-l-4 border-l-yellow-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Wartung fällig</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Wartung fällig
+            </CardTitle>
             <div className="h-2 w-2 rounded-full bg-yellow-500" />
           </CardHeader>
           <CardContent>
@@ -46,7 +54,9 @@ export default async function DashboardPage() {
         </Card>
         <Card className="border-l-4 border-l-red-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Kritisch/Überfällig</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Kritisch/Überfällig
+            </CardTitle>
             <div className="h-2 w-2 rounded-full bg-red-500" />
           </CardHeader>
           <CardContent>
@@ -55,11 +65,48 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {/* Integration stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Aktive Integrationen
+            </CardTitle>
+            <div className="h-2 w-2 rounded-full bg-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeIntegrations}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              <Link
+                href="/settings/integrations"
+                className="text-blue-600 hover:underline"
+              >
+                Integrationen verwalten →
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-orange-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Offene Übermittlungen
+            </CardTitle>
+            <div className="h-2 w-2 rounded-full bg-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingSubmissions}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Ausstehend oder übermittelt
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Zuletzt hinzugefügt</h2>
-          <Link 
-            href="/assets" 
+          <Link
+            href="/assets"
             className="text-sm text-blue-600 hover:underline"
           >
             Alle Assets ansehen &rarr;
@@ -78,21 +125,31 @@ export default async function DashboardPage() {
             <TableBody>
               {recentAssets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                  <TableCell
+                    colSpan={4}
+                    className="text-center py-4 text-muted-foreground"
+                  >
                     Keine Assets gefunden.
                   </TableCell>
                 </TableRow>
               ) : (
                 recentAssets.map((asset) => (
                   <TableRow key={asset.id}>
-                    <TableCell className="font-medium">{asset.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {asset.name}
+                    </TableCell>
                     <TableCell>{asset.type}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="gap-1">
-                        <div className={`h-2 w-2 rounded-full ${
-                          asset.status === "GREEN" ? "bg-green-500" : 
-                          asset.status === "YELLOW" ? "bg-yellow-500" : "bg-red-500"
-                        }`} />
+                        <div
+                          className={`h-2 w-2 rounded-full ${
+                            asset.status === "GREEN"
+                              ? "bg-green-500"
+                              : asset.status === "YELLOW"
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                          }`}
+                        />
                         {asset.status}
                       </Badge>
                     </TableCell>
