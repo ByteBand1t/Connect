@@ -77,7 +77,20 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const data = await getDashboardData();
+  let data;
+  try {
+    data = await getDashboardData();
+  } catch (error) {
+    return (
+      <div className="p-6 space-y-4">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-red-800 font-medium">Datenbankverbindung fehlgeschlagen</p>
+          <p className="text-red-600 text-sm mt-2">Bitte prüfe deine .env Datei und stelle sicher, dass PostgreSQL läuft.</p>
+        </div>
+      </div>
+    );
+  }
 
   const donutData = [
     { name: "Green", value: data.assetCounts.GREEN, color: statusMeta.GREEN.color },

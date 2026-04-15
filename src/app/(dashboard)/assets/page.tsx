@@ -26,6 +26,7 @@ export default function AssetsPage() {
   const searchParams = useSearchParams();
   const [assets, setAssets] = useState<AssetRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState(() => {
@@ -46,9 +47,18 @@ export default function AssetsPage() {
 
   useEffect(() => {
     async function fetchAssets() {
-      const res = await getAssets();
-      if (res.success && res.data) setAssets(res.data);
-      setLoading(false);
+      try {
+        const res = await getAssets();
+        if (res.success && res.data) {
+          setAssets(res.data);
+        } else {
+          setFetchError("Datenbankverbindung fehlgeschlagen");
+        }
+      } catch {
+        setFetchError("Datenbankverbindung fehlgeschlagen");
+      } finally {
+        setLoading(false);
+      }
     }
     fetchAssets();
   }, []);
@@ -71,6 +81,18 @@ export default function AssetsPage() {
   };
 
   if (loading) return <div className="p-8 text-center">Loading assets...</div>;
+
+  if (fetchError) {
+    return (
+      <div className="p-6 space-y-4">
+        <h1 className="text-3xl font-bold">Assets</h1>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-red-800 font-medium">Datenbankverbindung fehlgeschlagen</p>
+          <p className="text-red-600 text-sm mt-2">Bitte prüfe deine .env Datei und stelle sicher, dass PostgreSQL läuft.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
