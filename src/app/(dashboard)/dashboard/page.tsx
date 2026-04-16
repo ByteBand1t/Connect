@@ -10,6 +10,9 @@ import {
   Package,
   PlugZap,
   ShoppingCart,
+  Truck,
+  Users,
+  Inbox,
 } from "lucide-react";
 
 import { auth } from "@/lib/auth";
@@ -63,9 +66,18 @@ const typeLabels: Record<string, string> = {
   OTHER: "Other",
 };
 
+const orderStatusBadge: Record<string, string> = {
+  DRAFT: "bg-slate-100 text-slate-800 border-slate-200",
+  SUBMITTED: "bg-blue-100 text-blue-800 border-blue-200",
+  CONFIRMED: "bg-amber-100 text-amber-800 border-amber-200",
+  SHIPPED: "bg-amber-100 text-amber-800 border-amber-200",
+  DELIVERED: "bg-green-100 text-green-800 border-green-200",
+  CANCELLED: "bg-red-100 text-red-800 border-red-200",
+};
+
 function formatDate(date: Date | null) {
   if (!date) return "-";
-  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(date);
+  return new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(date);
 }
 
 type AssetStatus = keyof typeof statusMeta;
@@ -86,12 +98,24 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
           <p className="text-red-800 font-medium">Datenbankverbindung fehlgeschlagen</p>
-          <p className="text-red-600 text-sm mt-2">Bitte prüfe deine .env Datei und stelle sicher, dass PostgreSQL läuft.</p>
+          <p className="text-red-600 text-sm mt-2">
+            Bitte prüfe deine .env Datei und stelle sicher, dass PostgreSQL läuft.
+          </p>
         </div>
       </div>
     );
   }
 
+  if (data.orgType === "SUPPLIER") {
+    return <SupplierDashboard data={data} />;
+  }
+
+  return <OperatorDashboard data={data} />;
+}
+
+// ─── OPERATOR DASHBOARD ──────────────────────────────────────────────────────
+
+function OperatorDashboard({ data }: { data: Awaited<ReturnType<typeof getDashboardData>> }) {
   const donutData = [
     { name: "Green", value: data.assetCounts.GREEN, color: statusMeta.GREEN.color },
     { name: "Yellow", value: data.assetCounts.YELLOW, color: statusMeta.YELLOW.color },
@@ -114,7 +138,9 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Your central command view for assets, maintenance, and orders.</p>
+          <p className="text-sm text-muted-foreground">
+            Your central command view for assets, maintenance, and orders.
+          </p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="outline" />}>
@@ -129,11 +155,11 @@ export default async function DashboardPage() {
         </DropdownMenu>
       </div>
 
+      {/* Asset status cards */}
       <div className="grid gap-4 lg:grid-cols-3">
         {(["GREEN", "YELLOW", "RED"] as const).map((status) => {
           const item = statusMeta[status];
           const Icon = item.Icon;
-
           return (
             <Link key={status} href={`/assets?status=${status}`}>
               <Card className={`h-full border transition hover:shadow-sm ${item.className}`}>
@@ -155,6 +181,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Status distribution */}
         <Card>
           <CardHeader>
             <CardTitle>Asset status distribution</CardTitle>
@@ -174,7 +201,8 @@ export default async function DashboardPage() {
                 <Separator />
                 <div className="space-y-2 text-sm">
                   {donutData.map((item) => {
-                    const percentage = data.totalAssets > 0 ? Math.round((item.value / data.totalAssets) * 100) : 0;
+                    const percentage =
+                      data.totalAssets > 0 ? Math.round((item.value / data.totalAssets) * 100) : 0;
                     return (
                       <div key={item.name} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -193,6 +221,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Maintenance timeline */}
         <Card>
           <CardHeader>
             <CardTitle>Maintenance timeline</CardTitle>
@@ -203,39 +232,52 @@ export default async function DashboardPage() {
               <p className="text-sm text-muted-foreground">All assets are in the green range.</p>
             ) : (
               <div className="space-y-3">
-                {data.upcomingMaintenance.map((asset: (typeof data.upcomingMaintenance)[number]) => {
-                  const dueDate = asset.nextMaintenanceDate;
-                  const isOverdue = dueDate ? dueDate.getTime() < data.nowTimestamp : false;
-                  const status = asset.status as AssetStatus;
-                  return (
-                    <div key={asset.id} className={`rounded-md border p-3 ${isOverdue ? "border-red-200 bg-red-50/50" : ""}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <Link href={`/assets/${asset.id}`} className="font-medium hover:underline">
-                            {asset.name}
-                          </Link>
-                          <div className="mt-1 flex items-center gap-2">
-                            <Badge variant="outline">{typeLabels[asset.type] ?? asset.type}</Badge>
-                            <Badge variant="outline" className={statusMeta[status].badgeClassName}>
-                              {status}
-                            </Badge>
+                {data.upcomingMaintenance.map(
+                  (asset: (typeof data.upcomingMaintenance)[number]) => {
+                    const dueDate = asset.nextMaintenanceDate;
+                    const isOverdue = dueDate ? dueDate.getTime() < data.nowTimestamp : false;
+                    const status = asset.status as AssetStatus;
+                    return (
+                      <div
+                        key={asset.id}
+                        className={`rounded-md border p-3 ${isOverdue ? "border-red-200 bg-red-50/50" : ""}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <Link href={`/assets/${asset.id}`} className="font-medium hover:underline">
+                              {asset.name}
+                            </Link>
+                            <div className="mt-1 flex items-center gap-2">
+                              <Badge variant="outline">{typeLabels[asset.type] ?? asset.type}</Badge>
+                              <Badge
+                                variant="outline"
+                                className={statusMeta[status].badgeClassName}
+                              >
+                                {status}
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-right text-xs text-muted-foreground">
-                          <div>{formatDate(dueDate)}</div>
-                          <div className={isOverdue ? "font-medium text-red-700" : ""}>
-                            {dueDate ? (isOverdue ? `${getRelativeTime(dueDate)} overdue` : getRelativeTime(dueDate)) : "No due date"}
+                          <div className="text-right text-xs text-muted-foreground">
+                            <div>{formatDate(dueDate)}</div>
+                            <div className={isOverdue ? "font-medium text-red-700" : ""}>
+                              {dueDate
+                                ? isOverdue
+                                  ? `${getRelativeTime(dueDate)} overdue`
+                                  : getRelativeTime(dueDate)
+                                : "No due date"}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  }
+                )}
               </div>
             )}
           </CardContent>
         </Card>
 
+        {/* Orders overview */}
         <Card>
           <CardHeader>
             <CardTitle>Orders overview</CardTitle>
@@ -266,7 +308,11 @@ export default async function DashboardPage() {
             ) : (
               <div className="space-y-2">
                 {data.recentOrders.map((order: (typeof data.recentOrders)[number]) => (
-                  <Link key={order.id} href={`/orders/${order.id}`} className="block rounded-md border p-3 hover:bg-muted/50">
+                  <Link
+                    key={order.id}
+                    href={`/orders/${order.id}`}
+                    className="block rounded-md border p-3 hover:bg-muted/50"
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-medium">#{order.orderNumber}</p>
@@ -274,7 +320,9 @@ export default async function DashboardPage() {
                       </div>
                       <div className="text-right">
                         <Badge variant="outline">{order.status}</Badge>
-                        <p className="mt-1 text-xs text-muted-foreground">{formatDate(order.createdAt)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {formatDate(order.createdAt)}
+                        </p>
                       </div>
                     </div>
                   </Link>
@@ -288,6 +336,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Supplier integrations */}
         <Card>
           <CardHeader>
             <CardTitle>Supplier integrations status</CardTitle>
@@ -303,9 +352,15 @@ export default async function DashboardPage() {
                 <p className="text-xs text-muted-foreground">Open submissions</p>
                 <p className="text-2xl font-semibold">{data.openSubmissions}</p>
               </div>
-              <div className={`rounded-md border p-3 ${data.failedSubmissions > 0 ? "border-red-200 bg-red-50/70" : ""}`}>
+              <div
+                className={`rounded-md border p-3 ${data.failedSubmissions > 0 ? "border-red-200 bg-red-50/70" : ""}`}
+              >
                 <p className="text-xs text-muted-foreground">Failed submissions</p>
-                <p className={`text-2xl font-semibold ${data.failedSubmissions > 0 ? "text-red-700" : ""}`}>{data.failedSubmissions}</p>
+                <p
+                  className={`text-2xl font-semibold ${data.failedSubmissions > 0 ? "text-red-700" : ""}`}
+                >
+                  {data.failedSubmissions}
+                </p>
               </div>
             </div>
 
@@ -320,6 +375,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {/* Activity feed */}
       <Card>
         <CardHeader>
           <CardTitle>Activity feed</CardTitle>
@@ -333,7 +389,13 @@ export default async function DashboardPage() {
               {data.recentActivities.map((activity: (typeof data.recentActivities)[number]) => (
                 <div key={activity.id} className="flex items-start gap-3 rounded-md border p-3">
                   <div className="mt-0.5 rounded-full bg-muted p-1.5">
-                    {activity.entityType === "Asset" ? <Package className="size-4" /> : activity.entityType === "Order" ? <ShoppingCart className="size-4" /> : <PlugZap className="size-4" />}
+                    {activity.entityType === "Asset" ? (
+                      <Package className="size-4" />
+                    ) : activity.entityType === "Order" ? (
+                      <ShoppingCart className="size-4" />
+                    ) : (
+                      <PlugZap className="size-4" />
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm">{activity.description}</p>
@@ -351,6 +413,238 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// ─── SUPPLIER DASHBOARD ───────────────────────────────────────────────────────
+
+function SupplierDashboard({ data }: { data: Awaited<ReturnType<typeof getDashboardData>> }) {
+  const incomingOrders = data.incomingOrders as Array<{
+    id: string;
+    orderNumber: string;
+    status: string;
+    createdAt: Date;
+    asset: { id: string; name: string };
+    organization: { name: string };
+  }>;
+
+  const managedAssets = data.managedAssets as Array<{
+    asset: {
+      id: string;
+      name: string;
+      status: string;
+      type: string;
+      organization: { name: string };
+    };
+  }>;
+
+  // Unique customers derived from incoming orders
+  const customers = Array.from(
+    new Map(incomingOrders.map((o) => [o.organization.name, o.organization.name])).values()
+  );
+
+  return (
+    <div className="space-y-6 p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            Übersicht über eingehende Bestellungen und betreute Assets.
+          </p>
+        </div>
+      </div>
+
+      {/* KPI strip */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Eingehende Bestellungen</CardDescription>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl">Bestellungen</CardTitle>
+              <Inbox className="size-5 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-semibold">{incomingOrders.length}</div>
+            <p className="mt-2 text-xs text-muted-foreground">Gesamt empfangene Bestellungen</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Betreute Assets</CardDescription>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl">Assets</CardTitle>
+              <Package className="size-5 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-semibold">{managedAssets.length}</div>
+            <p className="mt-2 text-xs text-muted-foreground">Geräte die ihr betreut</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Kunden</CardDescription>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl">Betreiber</CardTitle>
+              <Users className="size-5 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-semibold">{customers.length}</div>
+            <p className="mt-2 text-xs text-muted-foreground">Betreiber-Organisationen</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Incoming orders */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Eingehende Bestellungen</CardTitle>
+            <CardDescription>Bestellungen von Betreibern an euch.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {incomingOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Noch keine Bestellungen eingegangen.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {incomingOrders.map((order) => (
+                  <Link
+                    key={order.id}
+                    href={`/orders/${order.id}`}
+                    className="block rounded-md border p-3 hover:bg-muted/50"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium">#{order.orderNumber}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {order.asset.name} · {order.organization.name}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge
+                          variant="outline"
+                          className={orderStatusBadge[order.status] ?? ""}
+                        >
+                          {order.status}
+                        </Badge>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {formatDate(order.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Managed assets */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Betreute Assets</CardTitle>
+            <CardDescription>Geräte und Maschinen die ihr betreut.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {managedAssets.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Noch keine Assets verknüpft.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {managedAssets.map((entry, idx) => {
+                  const asset = entry.asset;
+                  const status = asset.status as AssetStatus;
+                  return (
+                    <div key={idx} className="flex items-center justify-between rounded-md border p-3">
+                      <div>
+                        <p className="text-sm font-medium">{asset.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {typeLabels[asset.type] ?? asset.type} · {asset.organization.name}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className={statusMeta[status]?.badgeClassName ?? ""}>
+                        {status}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Customer overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Kunden-Übersicht</CardTitle>
+            <CardDescription>Betreiber-Organisationen die euch Bestellungen senden.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {customers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Noch keine Kunden vorhanden.</p>
+            ) : (
+              <div className="space-y-2">
+                {customers.map((name) => {
+                  const count = incomingOrders.filter((o) => o.organization.name === name).length;
+                  return (
+                    <div
+                      key={name}
+                      className="flex items-center justify-between rounded-md border p-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Truck className="size-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{name}</span>
+                      </div>
+                      <Badge variant="outline">{count} Bestellung{count !== 1 ? "en" : ""}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Activity feed */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Activity feed</CardTitle>
+            <CardDescription>Letzte 10 Ereignisse.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.recentActivities.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No activities yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {data.recentActivities.map((activity: (typeof data.recentActivities)[number]) => (
+                  <div key={activity.id} className="flex items-start gap-3 rounded-md border p-3">
+                    <div className="mt-0.5 rounded-full bg-muted p-1.5">
+                      {activity.entityType === "Order" ? (
+                        <ShoppingCart className="size-4" />
+                      ) : (
+                        <Package className="size-4" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm">{activity.description}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        by {activity.user.name} • {getRelativeTime(activity.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

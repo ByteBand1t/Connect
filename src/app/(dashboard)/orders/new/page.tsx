@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { getAssets } from "@/lib/actions/assets";
 import { createOrder } from "@/lib/actions/orders";
+import { getAssetSuppliers } from "@/lib/actions/onboarding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 type Asset = {
   id: string;
   name: string;
+};
+
+type Supplier = {
+  id: string;
+  name: string;
+  isDefault: boolean;
 };
 
 type OrderItem = {
@@ -28,6 +35,9 @@ export default function NewOrderPage() {
   const router = useRouter();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [selectedAssetId, setSelectedAssetId] = useState("");
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,6 +52,30 @@ export default function NewOrderPage() {
     }
     fetchAssets();
   }, []);
+
+  // When asset changes, fetch its linked suppliers
+  useEffect(() => {
+    if (!selectedAssetId) {
+      setSuppliers([]);
+      setSelectedSupplierId("");
+      return;
+    }
+
+    setLoadingSuppliers(true);
+    getAssetSuppliers(selectedAssetId)
+      .then((res) => {
+        if (res.success && res.data) {
+          setSuppliers(res.data);
+          // Pre-select default supplier if there is one
+          const def = res.data.find((s) => s.isDefault);
+          setSelectedSupplierId(def?.id ?? "");
+        } else {
+          setSuppliers([]);
+          setSelectedSupplierId("");
+        }
+      })
+      .finally(() => setLoadingSuppliers(false));
+  }, [selectedAssetId]);
 
   function addItem() {
     setItems((prev) => [...prev, { partNumber: "", name: "", quantity: 1, unitPrice: 0 }]);
@@ -76,6 +110,7 @@ export default function NewOrderPage() {
     try {
       const result = await createOrder({
         assetId: selectedAssetId,
+        supplierId: selectedSupplierId || undefined,
         notes,
         currency: "EUR",
         items: items.map((item) => ({
@@ -113,6 +148,7 @@ export default function NewOrderPage() {
             <CardTitle>Bestelldetails</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Asset selection */}
             <div className="space-y-2">
               <Label htmlFor="asset">Asset</Label>
               <Select value={selectedAssetId} onValueChange={setSelectedAssetId}>
@@ -129,6 +165,43 @@ export default function NewOrderPage() {
               </Select>
             </div>
 
+            {/* Supplier selection — shown once an asset is picked */}
+            {selectedAssetId && (
+              <div className="space-y-2">
+                <Label htmlFor="supplier">
+                  Hersteller / Lieferant
+                  {loadingSuppliers && (
+                    <span className="ml-2 text-xs text-muted-foreground">Lädt...</span>
+                  )}
+                </Label>
+                {suppliers.length === 0 && !loadingSuppliers ? (
+                  <p className="text-sm text-muted-foreground rounded-md border border-dashed p-3">
+                    Kein Hersteller mit diesem Asset verknüpft. Du kannst die Bestellung trotzdem
+                    aufgeben und später einen Hersteller zuweisen.
+                  </p>
+                ) : (
+                  <Select
+                    value={selectedSupplierId}
+                    onValueChange={setSelectedSupplierId}
+                    disabled={loadingSuppliers}
+                  >
+                    <SelectTrigger id="supplier" className="w-full">
+                      <SelectValue placeholder="Hersteller auswählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {suppliers.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                          {s.isDefault ? " (Standard)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
+            {/* Notes */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notizen</Label>
               <textarea

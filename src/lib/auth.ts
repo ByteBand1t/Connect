@@ -21,6 +21,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await db.user.findUnique({
           where: { email: credentials.email as string },
+          include: { organization: { select: { type: true } } },
         });
 
         if (!user) return null;
@@ -35,16 +36,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           role: user.role,
           organizationId: user.organizationId,
+          orgType: user.organization?.type ?? null,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.organizationId = user.organizationId;
+        token.orgType = user.orgType ?? null;
+      }
+      // Allow client-side session.update() to refresh orgType
+      if (trigger === "update" && session?.orgType !== undefined) {
+        token.orgType = session.orgType;
       }
       return token;
     },
@@ -53,6 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = String(token.id ?? "");
         session.user.role = String(token.role ?? "");
         session.user.organizationId = String(token.organizationId ?? "");
+        session.user.orgType = (token.orgType as string | null) ?? null;
       }
       return session;
     },
