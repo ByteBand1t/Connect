@@ -9,19 +9,30 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+enum OrganizationType {
+  OPERATOR  // Betreiber – besitzt Assets
+  SUPPLIER  // Hersteller/Dienstleister – betreut Assets, empfängt Bestellungen
 }
 
 model Organization {
   id              String           @id @default(cuid())
   name            String
   slug            String           @unique
+  type            OrganizationType?
+  address         String?
+  phone           String?
+  email           String?
+  website         String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   users           User[]
   assets          Asset[]
+  suppliedAssets  AssetSupplier[]
   documents       Document[]
   orders          Order[]
+  receivedOrders  Order[]          @relation("SupplierOrders")
   supplierConfigs SupplierConfig[]
   activityLogs    ActivityLog[]
 }
@@ -48,14 +59,14 @@ enum UserRole {
 }
 
 model Asset {
-  id                      String      @id @default(cuid())
+  id                      String          @id @default(cuid())
   name                    String
   type                    AssetType
   manufacturer            String
   model                   String?
   serialNumber            String?
   location                String?
-  status                  AssetStatus @default(GREEN)
+  status                  AssetStatus     @default(GREEN)
   purchaseDate            DateTime?
   warrantyUntil           DateTime?
   maintenanceIntervalDays Int?
@@ -63,11 +74,25 @@ model Asset {
   nextMaintenanceDate     DateTime?
   notes                   String?
   organizationId          String
-  organization            Organization @relation(fields: [organizationId], references: [id])
-  createdAt               DateTime    @default(now())
-  updatedAt               DateTime    @updatedAt
+  organization            Organization    @relation(fields: [organizationId], references: [id])
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
   documents               Document[]
   orders                  Order[]
+  suppliers               AssetSupplier[]
+}
+
+model AssetSupplier {
+  id         String       @id @default(cuid())
+  assetId    String
+  asset      Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Organization @relation(fields: [supplierId], references: [id])
+  isDefault  Boolean      @default(false)
+  notes      String?
+  createdAt  DateTime     @default(now())
+
+  @@unique([assetId, supplierId])
 }
 
 enum AssetType {
@@ -96,7 +121,7 @@ enum DocumentCategory {
 }
 
 model Document {
-  id             String   @id @default(cuid())
+  id             String           @id @default(cuid())
   name           String
   fileName       String
   fileSize       Int
@@ -104,13 +129,13 @@ model Document {
   filePath       String
   category       DocumentCategory
   assetId        String
-  asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  asset          Asset            @relation(fields: [assetId], references: [id], onDelete: Cascade)
   uploadedById   String
-  uploadedBy     User     @relation(fields: [uploadedById], references: [id])
+  uploadedBy     User             @relation(fields: [uploadedById], references: [id])
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 }
 
 enum OrderStatus {
@@ -123,33 +148,35 @@ enum OrderStatus {
 }
 
 model Order {
-  id             String           @id @default(cuid())
-  orderNumber    String           @unique @default(cuid())
-  status         OrderStatus      @default(DRAFT)
+  id             String            @id @default(cuid())
+  orderNumber    String            @unique @default(cuid())
+  status         OrderStatus       @default(DRAFT)
   assetId        String
-  asset          Asset            @relation(fields: [assetId], references: [id])
+  asset          Asset             @relation(fields: [assetId], references: [id])
+  supplierId     String?
+  supplier       Organization?     @relation("SupplierOrders", fields: [supplierId], references: [id])
   items          OrderItem[]
   submissions    OrderSubmission[]
   totalAmount    Float?
-  currency       String           @default("EUR")
+  currency       String            @default("EUR")
   notes          String?
   createdById    String
-  createdBy      User             @relation(fields: [createdById], references: [id])
+  createdBy      User              @relation(fields: [createdById], references: [id])
   organizationId String
-  organization   Organization     @relation(fields: [organizationId], references: [id])
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 }
 
 model OrderItem {
-  id          String  @id @default(cuid())
-  orderId     String
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  partNumber  String
-  name        String
-  quantity    Int
-  unitPrice   Float?
-  totalPrice  Float?
+  id         String @id @default(cuid())
+  orderId    String
+  order      Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  partNumber String
+  name       String
+  quantity   Int
+  unitPrice  Float?
+  totalPrice Float?
 }
 
 model SupplierConfig {
@@ -183,17 +210,17 @@ model OrderSubmission {
 }
 
 model ActivityLog {
-  id              String       @id @default(cuid())
-  type            String
-  entityType      String
-  entityId        String
-  description     String
-  metadata        Json?
-  userId          String
-  user            User         @relation(fields: [userId], references: [id])
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  createdAt       DateTime     @default(now())
+  id             String       @id @default(cuid())
+  type           String
+  entityType     String
+  entityId       String
+  description    String
+  metadata       Json?
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
 
   @@index([organizationId, createdAt])
 }

@@ -15,6 +15,7 @@ const OrderItemSchema = z.object({
 
 const OrderSchema = z.object({
   assetId: z.string().min(1, "Asset is required"),
+  supplierId: z.string().optional(),
   notes: z.string().optional(),
   currency: z.string().default("EUR"),
   items: z.array(OrderItemSchema).min(1, "At least one item is required"),
@@ -114,7 +115,10 @@ export async function createOrder(data: OrderInput) {
 
     const order = await db.order.create({
       data: {
-        ...orderData,
+        assetId: orderData.assetId,
+        notes: orderData.notes,
+        currency: orderData.currency,
+        supplierId: orderData.supplierId || null,
         totalAmount,
         createdById: session.user.id,
         organizationId: session.user.organizationId,
