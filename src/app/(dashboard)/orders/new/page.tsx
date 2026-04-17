@@ -151,7 +151,7 @@ export default function NewOrderPage() {
             {/* Asset selection */}
             <div className="space-y-2">
               <Label htmlFor="asset">Asset</Label>
-              <Select value={selectedAssetId} onValueChange={setSelectedAssetId}>
+              <Select value={selectedAssetId} onValueChange={(v) => setSelectedAssetId(v ?? "")}>
                 <SelectTrigger id="asset" className="w-full">
                   <SelectValue placeholder="Asset auswählen..." />
                 </SelectTrigger>
@@ -182,7 +182,7 @@ export default function NewOrderPage() {
                 ) : (
                   <Select
                     value={selectedSupplierId}
-                    onValueChange={setSelectedSupplierId}
+                    onValueChange={(v) => setSelectedSupplierId(v ?? "")}
                     disabled={loadingSuppliers}
                   >
                     <SelectTrigger id="supplier" className="w-full">

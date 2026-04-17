@@ -139,7 +139,7 @@ export async function getDashboardData() {
             take: 10,
           }),
         ])
-      : ([] as const[]);
+      : [[], []];
 
   return {
     orgType: organization?.type ?? null,
