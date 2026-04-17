@@ -14,7 +14,7 @@ function isDashboardPath(pathname: string) {
   return DASHBOARD_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const token = await getToken({ req, secret: process.env.AUTH_SECRET });

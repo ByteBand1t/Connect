@@ -303,7 +303,7 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="assetType">Typ *</Label>
-                <Select value={assetType} onValueChange={setAssetType}>
+                <Select value={assetType} onValueChange={(v) => setAssetType(v ?? "")}>
                   <SelectTrigger id="assetType" className="w-full">
                     <SelectValue placeholder="Typ auswählen..." />
                   </SelectTrigger>
