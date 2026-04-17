@@ -19,6 +19,11 @@ export async function proxy(req: NextRequest) {
 
   const token = await getToken({ req, secret: process.env.AUTH_SECRET });
 
+  // Admin routes: must be logged in (layout handles email check)
+  if (pathname.startsWith("/admin") && !token) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
   // Not logged in → redirect to login for protected routes
   if (!token && isDashboardPath(pathname)) {
     return NextResponse.redirect(new URL("/login", req.url));
@@ -39,6 +44,7 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/admin/:path*",
     "/dashboard/:path*",
     "/assets/:path*",
     "/orders/:path*",
