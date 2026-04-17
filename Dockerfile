@@ -10,8 +10,11 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Generate Prisma Client (dummy URL required by Prisma, no real DB connection needed)
+# Dummy build-time env vars — no real DB/auth used during compilation
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV AUTH_SECRET="build-time-placeholder-not-used-at-runtime"
+ENV NEXT_PUBLIC_APP_URL="http://localhost:3000"
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npx prisma generate
 RUN npm run build
 
