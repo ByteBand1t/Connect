@@ -1,12 +1,14 @@
-# Stage 1: Deps
+# Stage 1: Install dependencies + pre-generate Prisma client
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json prisma.config.ts ./
+COPY prisma ./prisma
 RUN npm ci
 
-# Stage 2: Builder
+# Stage 2: Build the Next.js application
 FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -18,25 +20,19 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npx prisma generate
 RUN npm run build
 
-# Stage 3: Runner
+# Stage 3: Production runtime
 FROM node:20-alpine AS runner
 WORKDIR /app
-
 ENV NODE_ENV=production
-
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
-
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-
 USER nextjs
-
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-
 CMD ["node", "server.js"]
