@@ -48,6 +48,7 @@ export async function registerUser(values: RegisterInput) {
     return { success: true, user };
   } catch (error) {
     console.error("Registration error:", error);
-    return { success: false, error: "An unexpected error occurred" };
+    const message = error instanceof Error ? error.message : "An unexpected error occurred";
+    return { success: false, error: message };
   }
 }
